@@ -79,6 +79,9 @@ class Grover
 
     def parse_package_error(error_message) # rubocop:disable Metrics/MethodLength
       package_name = error_message[/^Error: Cannot find module '(.*)'$/, 1]
+      puts "******************************* error_message"
+      puts "error_message:  #{error_message}"
+      puts "package_name: #{package_name}"
       raise Grover::Error, error_message unless package_name
 
       begin
