@@ -15,13 +15,22 @@ class Grover
     end
 
     def convert(method, url_or_html, options)
+      puts "*******************Inside convert method"
       spawn_process
       ensure_packages_are_initiated
-      result = call_js_method method, url_or_html, options
-      return unless result
-      return result if result.is_a?(String)
 
-      result['data'].pack('C*')
+      puts "Calling JavaScript method: #{method}"
+      result = call_js_method method, url_or_html, options
+
+      if result.nil?
+        puts "Result is nil, no data returned"
+      elsif result.is_a?(String)
+        puts "Result is a string: #{result[0..500]}... (truncated)" if result.length > 500
+        return result
+      else
+        puts "Result data received, packing..."
+        return result['data'].pack('C*')
+      end
     ensure
       cleanup_process if stdin
     end
@@ -40,13 +49,31 @@ class Grover
     end
 
     def ensure_packages_are_initiated
+      puts "*****************Inside ensure_packages_are_initiated method"
       input = stdout.gets
-      raise Grover::Error, "Failed to instantiate worker process:\n#{stderr.read}" if input.nil?
+
+      if input.nil?
+        puts "Input is nil, worker process failed"
+        raise Grover::Error, "Failed to instantiate worker process:\n#{stderr.read}"
+      end
+
+      # Log the size/length of the input
+      puts "Input length: #{input.length}"
+
+      # Log a portion of the input if it's too large
+      if input.length > 500
+        puts "Input preview: #{input[0..500]}... (truncated)"
+      else
+        puts "Input: #{input}"
+      end
 
       result = JSON.parse(input)
+      puts "Result after parsing input: #{result.inspect}"
+
       return if result[0] == 'ok'
 
       cleanup_process
+      puts "Result not OK, raising parse_package_error for result: #{result[1]}"
       parse_package_error result[1]
     end
 
@@ -79,6 +106,11 @@ class Grover
     end
 
     def call_js_method(method, url_or_html, options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
+      puts "**********************Inside call_js_method"
+      puts "Method: #{method}"
+      puts "URL or HTML content: #{url_or_html[0..500]}... (truncated)" if url_or_html.length > 500
+      puts "Options: #{options.inspect}"
+
       stdin.puts JSON.dump([method, url_or_html, options])
       input = stdout.gets
       raise Errno::EPIPE, "Can't read from worker" if input.nil?
