@@ -15,20 +15,20 @@ class Grover
     end
 
     def convert(method, url_or_html, options)
-      puts "*******************Inside convert method"
+      $stdout.puts "*******************Inside convert method"
       spawn_process
       ensure_packages_are_initiated
 
-      puts "Calling JavaScript method: #{method}"
+      $stdout.puts "Calling JavaScript method: #{method}"
       result = call_js_method method, url_or_html, options
 
       if result.nil?
-        puts "Result is nil, no data returned"
+        $stdout.puts "Result is nil, no data returned"
       elsif result.is_a?(String)
-        puts "Result is a string: #{result[0..500]}... (truncated)" if result.length > 500
+        $stdout.puts "Result is a string: #{result[0..500]}... (truncated)" if result.length > 500
         return result
       else
-        puts "Result data received, packing..."
+        $stdout.puts "Result data received, packing..."
         return result['data'].pack('C*')
       end
     ensure
@@ -49,26 +49,26 @@ class Grover
     end
 
     def ensure_packages_are_initiated
-      puts "*****************Inside ensure_packages_are_initiated method"
+      $stdout.puts "*****************Inside ensure_packages_are_initiated method"
       input = stdout.gets
 
       if input.nil?
-        puts "Input is nil, worker process failed"
+        $stdout.puts "Input is nil, worker process failed"
         raise Grover::Error, "Failed to instantiate worker process:\n#{stderr.read}"
       end
 
       # Log the size/length of the input
-      puts "Input length: #{input.length}"
+      $stdout.puts "Input length: #{input.length}"
 
       # Log a portion of the input if it's too large
       if input.length > 500
-        puts "Input preview: #{input[0..500]}... (truncated)"
+        $stdout.puts "Input preview: #{input[0..500]}... (truncated)"
       else
-        puts "Input: #{input}"
+        $stdout.puts "Input: #{input}"
       end
 
       result = JSON.parse(input)
-      puts "Result after parsing input: #{result.inspect}"
+      $stdout.puts "Result after parsing input: #{result.inspect}"
 
       return if result[0] == 'ok'
 
@@ -79,9 +79,9 @@ class Grover
 
     def parse_package_error(error_message) # rubocop:disable Metrics/MethodLength
       package_name = error_message[/^Error: Cannot find module '(.*)'$/, 1]
-      puts "******************************* error_message"
-      puts "error_message:  #{error_message}"
-      puts "package_name: #{package_name}"
+      $stdout.puts "******************************* error_message"
+      $stdout.puts "error_message:  #{error_message}"
+      $stdout.puts "package_name: #{package_name}"
       raise Grover::Error, error_message unless package_name
 
       begin
@@ -109,10 +109,10 @@ class Grover
     end
 
     def call_js_method(method, url_or_html, options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
-      puts "**********************Inside call_js_method"
-      puts "Method: #{method}"
-      puts "URL or HTML content: #{url_or_html[0..500]}... (truncated)" if url_or_html.length > 500
-      puts "Options: #{options.inspect}"
+      $stdout.puts "**********************Inside call_js_method"
+      $stdout.puts "Method: #{method}"
+      $stdout.puts "URL or HTML content: #{url_or_html[0..500]}... (truncated)" if url_or_html.length > 500
+      $stdout.puts "Options: #{options.inspect}"
 
       stdin.puts JSON.dump([method, url_or_html, options])
       input = stdout.gets
